@@ -55,7 +55,7 @@ router.post('/signUp', async (req, res, next) => {
 
     //create token and attach it to returned JSON
     userToStore.token = sign(
-        {email: userToStore.email, name: userToStore.name},
+        {user_id: userToStore._id, email: userToStore.email, name: userToStore.name},
             ACCESS_TOKEN_KEY,
         {
             expiresIn: tokenExpirationTime,
@@ -86,20 +86,19 @@ router.post('/login', async (req, res, next) => {
             res.status(401).json({"messages": "Invalid username or password"})
             return
         }
+        console.log(fetchedUser)
 
         if(await bcrypt.compare(password, fetchedUser.password)){
+            console.log("TEST")
             fetchedUser.token = sign(
-                {user_id: fetchedUser._id, roles: fetchedUser.roles},
-                process.env.ACCESS_TOKEN_KEY,
+                {user_id: fetchedUser._id, email: fetchedUser.email, name: fetchedUser.name},
+                ACCESS_TOKEN_KEY,
                 {
                     expiresIn: tokenExpirationTime,
                 }
             )
 
-
             const userToReturn = {
-                email: fetchedUser.email,
-                name: fetchedUser.name,
                 token: fetchedUser.token,
             }
             res.status(200).json(userToReturn)
@@ -107,6 +106,7 @@ router.post('/login', async (req, res, next) => {
         else {
             res.status(401).json({"messages": "Invalid username or password"})
         }
+
 
     }catch (e) {
         res.status(500).json({"Internal server error: ":e})
