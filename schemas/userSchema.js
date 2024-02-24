@@ -1,39 +1,38 @@
-const mongoose = require('mongoose')
-const {Schema} = mongoose
-
+const mongoose = require("mongoose");
+const { Schema } = mongoose;
 
 const userSchema = new Schema(
-    {
-        email: {
-            type: String,
-            required: true,
-            unique: true
-        },
-        name: {
-            type: String,
-            required: true
-        },
-        password: {
-            type: String,
-            required: true
-        },
-        token: {
-            type: String
-        },
-        controleGear:{
-            type: [String],
-            index: true,
-            default: []
-        }
+  {
+    email: {
+      type: String,
+      required: true,
+      unique: true,
     },
-    {
-        timestamps: true
-    }
-)
+    name: {
+      type: String,
+      required: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    token: {
+      type: String,
+    },
+    controleGear: {
+      type: [String],
+      index: true,
+      default: [],
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
 
 // Define index on email field
 userSchema.index({ email: 1 });
 
-const User = mongoose.model('userSchema', userSchema)
+const User = mongoose.model("userSchema", userSchema);
 
-module.exports = User
+module.exports = User;
