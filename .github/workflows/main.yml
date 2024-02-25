@@ -33,8 +33,8 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            joecthomsen/authentication_server:${{ github.run_number }}
-            joecthomsen/authentication_server:latest
+            joecthomsen/joecthomsen/npc_authentication_serve:${{ github.run_number }}
+            joecthomsen/joecthomsen/npc_authentication_serve:latest
 
       - name: executing remote ssh commands using password
         uses: appleboy/ssh-action@v1.0.0
