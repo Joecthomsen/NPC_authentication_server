@@ -148,80 +148,80 @@ router.get("/", function (req, res, next) {
   res.send("respond with a resource");
 });
 
-// router.post("/addDevice", async (req, res, next) => {
-//   try {
-//     const { manufactoringID, email } = req.body;
-//     if (!email || !manufactoringID) {
-//       res
-//         .status(401)
-//         .json({ messages: "Email and manufactoringID is required" });
-//       return;
-//     }
-//     const fetchedUser = await User.findOne({ email: email });
-//     if (!fetchedUser) {
-//       res.status(401).json({ messages: "User does not exist" });
-//       return;
-//     }
+router.post("/addDevice", async (req, res, next) => {
+  try {
+    const { manufactoringID, email } = req.body;
+    if (!email || !manufactoringID) {
+      res
+        .status(401)
+        .json({ messages: "Email and manufactoringID is required" });
+      return;
+    }
+    const fetchedUser = await User.findOne({ email: email });
+    if (!fetchedUser) {
+      res.status(401).json({ messages: "User does not exist" });
+      return;
+    }
 
-//     const checkForExistingDevice = await ControleGear.findOne({
-//       manufactoringID,
-//     });
-//     if (checkForExistingDevice) {
-//       res.status(401).json({ messages: "Device already exist" });
-//       return;
-//     }
+    const checkForExistingDevice = await ControleGear.findOne({
+      manufactoringID,
+    });
+    if (checkForExistingDevice) {
+      res.status(401).json({ messages: "Device already exist" });
+      return;
+    }
 
-//     const refreshToken = sign(
-//       {
-//         user_id: fetchedUser._id,
-//         email: fetchedUser.email,
-//         name: fetchedUser.name,
-//         manufactoringID: manufactoringID,
-//       },
-//       REFRESH_TOKEN_KEY,
-//       {
-//         expiresIn: refreshTokenExpirationTime,
-//       }
-//     );
+    const refreshToken = sign(
+      {
+        user_id: fetchedUser._id,
+        email: fetchedUser.email,
+        name: fetchedUser.name,
+        manufactoringID: manufactoringID,
+      },
+      REFRESH_TOKEN_KEY,
+      {
+        expiresIn: refreshTokenExpirationTime,
+      }
+    );
 
-//     const accessToken = sign(
-//       {
-//         user_id: fetchedUser._id,
-//         email: fetchedUser.email,
-//         name: fetchedUser.name,
-//         manufactoringID: manufactoringID,
-//       },
-//       ACCESS_TOKEN_KEY,
-//       {
-//         expiresIn: accessTokenExpirationTime,
-//       }
-//     );
+    const accessToken = sign(
+      {
+        user_id: fetchedUser._id,
+        email: fetchedUser.email,
+        name: fetchedUser.name,
+        manufactoringID: manufactoringID,
+      },
+      ACCESS_TOKEN_KEY,
+      {
+        expiresIn: accessTokenExpirationTime,
+      }
+    );
 
-//     const newDevice = await ControleGear.create({
-//       manufactoringID,
-//       email,
-//       refreshToken,
-//     });
-//     if (!newDevice) {
-//       res.status(401).json({ messages: "Device not created" });
-//       return;
-//     }
+    const newDevice = await ControleGear.create({
+      manufactoringID,
+      email,
+      refreshToken,
+    });
+    if (!newDevice) {
+      res.status(401).json({ messages: "Device not created" });
+      return;
+    }
 
-//     fetchedUser.controleGear.push(manufactoringID);
+    fetchedUser.controleGear.push(manufactoringID);
 
-//     await fetchedUser.save();
-//     if (!fetchedUser) {
-//       res.status(401).json({ messages: "Device not added to user" });
-//       return;
-//     }
+    await fetchedUser.save();
+    if (!fetchedUser) {
+      res.status(401).json({ messages: "Device not added to user" });
+      return;
+    }
 
-//     res
-//       .status(201)
-//       .json({ accessToken: accessToken, refreshToken: refreshToken });
-//   } catch (error) {
-//     res.status(500).send("Could not create device");
-//   }
-// });
+    res
+      .status(201)
+      .json({ accessToken: accessToken, refreshToken: refreshToken });
+  } catch (error) {
+    res.status(500).send("Could not create device");
+  }
+});
 
 router.post("/refreshToken_device", async (req, res, next) => {
   try {
