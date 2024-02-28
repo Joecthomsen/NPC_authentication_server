@@ -39,7 +39,7 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-connect("mongodb://npc_root:ImASillyPassword!@mongo:27017/NPC_Database", {
+connect("mongodb://npc_root:ImASillyPassword!@localhost:27017/NPC_Database", {
   authSource: "admin",
 })
   .then(() => {
