@@ -4,10 +4,9 @@ var path = require("path");
 var cookieParser = require("cookie-parser");
 var logger = require("morgan");
 const { connect } = require("mongoose");
-
+require("dotenv").config();
 var indexRouter = require("./routes/index");
 var authRouter = require("./routes/auth");
-
 var app = express();
 
 // view engine setup
@@ -39,7 +38,15 @@ app.use(function (err, req, res, next) {
   res.render("error");
 });
 
-connect("mongodb://npc_root:ImASillyPassword!@mongo:27017/NPC_Database", {
+const dbUsername = process.env.DB_USERNAME || "npc_root";
+const dbPassword = process.env.DB_PASSWORD || "ImASillyPassword!";
+const dbHost = process.env.DB_HOST || "mongo";
+const dbPort = process.env.DB_PORT || "27017";
+const dbName = process.env.DB_NAME || "NPC_Database";
+
+const connectionString = `mongodb://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
+
+connect(connectionString, {
   authSource: "admin",
 })
   .then(() => {
@@ -48,5 +55,9 @@ connect("mongodb://npc_root:ImASillyPassword!@mongo:27017/NPC_Database", {
   .catch((err) => {
     console.error("Error connecting to MongoDB: ", err.message);
   });
+
+if (process.env.CONNECTION_STRING) {
+  console.log("Connection string: " + process.env.CONNECTION_STRING);
+}
 
 module.exports = app;

@@ -10,8 +10,8 @@ const refreshTokenExpirationTime = "7d";
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
 
-const ACCESS_TOKEN_KEY = "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
-const REFRESH_TOKEN_KEY = "MegaSecretKeyRefreshTokenKey"; //TODO Make .env file
+const ACCESS_TOKEN_KEY = process.env.ACCESS_TOKEN_KEY; // || "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
+const REFRESH_TOKEN_KEY = process.env.REFRESH_TOKEN_KEY; // || "MegaSecretKeyRefreshTokenKey"; //TODO Make .env file
 
 function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -62,7 +62,7 @@ router.post("/signUp", async (req, res, next) => {
     // Generate refresh token
     const refreshToken = sign(
       {
-        email: email,
+        email: email.toLowerCase(),
         name: fullName,
       },
       REFRESH_TOKEN_KEY, // Store this key securely, preferably in .env
@@ -81,7 +81,7 @@ router.post("/signUp", async (req, res, next) => {
     console.log("User to store: " + userToStore);
 
     const userToReturn = {
-      token: accessToken,
+      accessToken: accessToken,
       refreshToken: refreshToken,
     };
     return res.status(201).json(userToReturn);
@@ -105,7 +105,6 @@ router.post("/login", async (req, res, next) => {
     if (await bcrypt.compare(password, fetchedUser.password)) {
       const accessToken = sign(
         {
-          user_id: fetchedUser._id,
           email: fetchedUser.email,
           name: fetchedUser.name,
         },
@@ -117,7 +116,6 @@ router.post("/login", async (req, res, next) => {
 
       const refreshToken = sign(
         {
-          user_id: fetchedUser._id,
           email: fetchedUser.email,
           name: fetchedUser.name,
         },
@@ -173,7 +171,6 @@ router.post("/addDevice", async (req, res, next) => {
 
     const refreshToken = sign(
       {
-        user_id: fetchedUser._id,
         email: fetchedUser.email,
         name: fetchedUser.name,
         manufactoringID: manufactoringID,
@@ -186,7 +183,6 @@ router.post("/addDevice", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        user_id: fetchedUser._id,
         email: fetchedUser.email,
         name: fetchedUser.name,
         manufactoringID: manufactoringID,
@@ -226,6 +222,7 @@ router.post("/addDevice", async (req, res, next) => {
 router.post("/refreshToken_device", async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
+
     if (!refreshToken) {
       res.status(401).json({ messages: "Refresh token is required" });
       return;
@@ -234,7 +231,7 @@ router.post("/refreshToken_device", async (req, res, next) => {
     const decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
 
     if (!decodedRefreshToken) {
-      res.status(401).json({ messages: "Invalid refresh token" });
+      res.status(401).json({ messages: "Refresh token not verified" });
       return;
     }
 
@@ -253,7 +250,6 @@ router.post("/refreshToken_device", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        user_id: refreshToken._id,
         email: refreshToken.email,
         name: refreshToken.name,
         manufactoringID: refreshToken.manufactoringID,
@@ -264,7 +260,29 @@ router.post("/refreshToken_device", async (req, res, next) => {
       }
     );
 
-    res.status(201).json({ accessToken: accessToken });
+    const newRefreshToken = sign(
+      {
+        email: refreshToken.email,
+        name: refreshToken.name,
+        manufactoringID: refreshToken.manufactoringID,
+      },
+      REFRESH_TOKEN_KEY,
+      {
+        expiresIn: refreshTokenExpirationTime,
+      }
+    );
+
+    fetchedControleGear.refreshToken = newRefreshToken;
+    await fetchedControleGear.save();
+
+    if (!fetchedControleGear) {
+      res.status(401).json({ messages: "Could not refresh token" });
+      return;
+    }
+
+    res
+      .status(201)
+      .json({ accessToken: accessToken, refreshToken: newRefreshToken });
   } catch (error) {
     res.status(500).send("Could not refresh token");
   }
@@ -298,16 +316,32 @@ router.post("/refreshToken_user", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        user_id: refreshToken._id,
         email: refreshToken.email,
         name: refreshToken.name,
-        manufactoringID: refreshToken.manufactoringID,
       },
       ACCESS_TOKEN_KEY,
       {
         expiresIn: accessTokenExpirationTime,
       }
     );
+
+    const newRefreshToken = sign(
+      {
+        email: refreshToken.email,
+        name: refreshToken.name,
+      },
+      REFRESH_TOKEN_KEY,
+      {
+        expiresIn: refreshTokenExpirationTime,
+      }
+    );
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+    if (!user) {
+      res.status(401).json({ messages: "Could not refresh token" });
+      return;
+    }
 
     res.status(201).json({ accessToken: accessToken });
   } catch (error) {
