@@ -9,9 +9,12 @@ const accessTokenExpirationTime = "12h";
 const refreshTokenExpirationTime = "7d";
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
+const { connection } = require("mongoose");
 
-const ACCESS_TOKEN_KEY = process.env.ACCESS_TOKEN_KEY; // || "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
-const REFRESH_TOKEN_KEY = process.env.REFRESH_TOKEN_KEY; // || "MegaSecretKeyRefreshTokenKey"; //TODO Make .env file
+const ACCESS_TOKEN_KEY =
+  process.env.ACCESS_TOKEN_KEY || "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
+const REFRESH_TOKEN_KEY =
+  process.env.REFRESH_TOKEN_KEY || "MegaSecretKeyRefreshTokenKey"; //TODO Make .env file
 
 function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -58,6 +61,8 @@ router.post("/signUp", async (req, res, next) => {
         expiresIn: accessTokenExpirationTime,
       }
     );
+
+    console.log("TEST");
 
     // Generate refresh token
     const refreshToken = sign(
