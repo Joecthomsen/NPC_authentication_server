@@ -45,8 +45,9 @@ const dbPort = process.env.DB_PORT || "27017";
 const dbName = process.env.DB_NAME || "NPC_Database";
 
 //const connectionString = `mongodb://${dbUsername}:${dbPassword}@${dbHost}:${dbPort}/${dbName}`;
-const connectionString = `mongodb://npc_root:ImASillyPassword!@mongo:27017/NPC_Database`;
-
+//const connectionString = `mongodb://npc_root:ImASillyPassword!@mongo:27017/NPC_Database`;
+const connectionString =
+  "mongodb://npc_root:ImASillyPassword!@localhost:27017/NPC_Database";
 connect(connectionString, {
   authSource: "admin",
 })

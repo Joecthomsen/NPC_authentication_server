@@ -233,10 +233,19 @@ router.post("/refreshToken_device", async (req, res, next) => {
       return;
     }
 
-    const decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
+    console.log("Refresh token: " + refreshToken);
+
+    let decodedRefreshToken = "";
+    try {
+      decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(401)
+        .json({ messages: "Refresh token not verified: " + error });
+    }
 
     if (!decodedRefreshToken) {
-      res.status(401).json({ messages: "Refresh token not verified" });
       return;
     }
 
@@ -255,9 +264,9 @@ router.post("/refreshToken_device", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        email: refreshToken.email,
-        name: refreshToken.name,
-        manufactoringID: refreshToken.manufactoringID,
+        email: decodedRefreshToken.email,
+        name: decodedRefreshToken.name,
+        manufactoringID: decodedRefreshToken.manufactoringID,
       },
       ACCESS_TOKEN_KEY,
       {
@@ -267,9 +276,9 @@ router.post("/refreshToken_device", async (req, res, next) => {
 
     const newRefreshToken = sign(
       {
-        email: refreshToken.email,
-        name: refreshToken.name,
-        manufactoringID: refreshToken.manufactoringID,
+        email: decodedRefreshToken.email,
+        name: decodedRefreshToken.name,
+        manufactoringID: decodedRefreshToken.manufactoringID,
       },
       REFRESH_TOKEN_KEY,
       {
@@ -279,6 +288,8 @@ router.post("/refreshToken_device", async (req, res, next) => {
 
     fetchedControleGear.refreshToken = newRefreshToken;
     await fetchedControleGear.save();
+
+    console.log(fetchedControleGear);
 
     if (!fetchedControleGear) {
       res.status(401).json({ messages: "Could not refresh token" });
@@ -301,14 +312,16 @@ router.post("/refreshToken_user", async (req, res, next) => {
       return;
     }
 
-    const decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
+    let decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
 
     if (!decodedRefreshToken) {
       res.status(401).json({ messages: "Invalid refresh token" });
       return;
     }
 
-    const user = await User.findById(decodedRefreshToken.user_id);
+    const user = await User.findOne({ email: decodedRefreshToken.email });
+
+    console.log(user);
 
     if (!user) {
       res.status(401).json({ messages: "Invalid refresh token" });
@@ -321,8 +334,8 @@ router.post("/refreshToken_user", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        email: refreshToken.email,
-        name: refreshToken.name,
+        email: decodedRefreshToken.email,
+        name: decodedRefreshToken.name,
       },
       ACCESS_TOKEN_KEY,
       {
@@ -332,8 +345,8 @@ router.post("/refreshToken_user", async (req, res, next) => {
 
     const newRefreshToken = sign(
       {
-        email: refreshToken.email,
-        name: refreshToken.name,
+        email: decodedRefreshToken.email,
+        name: decodedRefreshToken.name,
       },
       REFRESH_TOKEN_KEY,
       {
@@ -348,7 +361,9 @@ router.post("/refreshToken_user", async (req, res, next) => {
       return;
     }
 
-    res.status(201).json({ accessToken: accessToken });
+    res
+      .status(201)
+      .json({ accessToken: accessToken, refreshToken: newRefreshToken });
   } catch (error) {
     res.status(500).send("Could not refresh token");
   }
