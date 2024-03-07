@@ -135,10 +135,24 @@ router.post("/login", async (req, res, next) => {
       fetchedUser.refreshToken = refreshToken;
       await fetchedUser.save();
 
+      // Map the array of controller IDs to an array of promises
+      const controllerPromises = fetchedUser.controllers.map(
+        async (controllerID) => {
+          // Directly destructure the properties from the result of Controller.findOne() and return them
+          const { popID, name, controleGears } = await Controller.findOne({
+            popID: controllerID,
+          });
+          return { popID, name, controleGears };
+        }
+      );
+
+      // Wait for all promises to resolve using Promise.all()
+      const controllers = await Promise.all(controllerPromises);
+
       const userToReturn = {
         accessToken: accessToken,
         refreshToken: refreshToken,
-        controllers: fetchedUser.controllers,
+        controllers: controllers,
       };
       res.status(200).json(userToReturn);
     } else {
