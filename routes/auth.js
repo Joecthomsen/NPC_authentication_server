@@ -5,7 +5,7 @@ const User = require("../schemas/userSchema");
 const Controller = require("../schemas/controllerSchema");
 const ControleGear = require("../schemas/controleGearSchema");
 const bcrypt = require("bcrypt");
-const { sign } = require("jsonwebtoken");
+const { sign, verify } = require("jsonwebtoken");
 const accessTokenExpirationTime = "12h";
 const refreshTokenExpirationTime = "7d";
 const saltRounds = 10;
@@ -151,13 +151,26 @@ router.post("/login", async (req, res, next) => {
 
 router.post("/add_controller", async (req, res, next) => {
   try {
-    const { popID, name, email } = req.body;
-    if (!popID || !email) {
-      res.status(401).json({ messages: "popID and email are required" });
+    const { popID, name } = req.body;
+    const { token } = req.headers;
+
+    if (!popID) {
+      res.status(401).json({ messages: "popID is required" });
       return;
     }
-    const fetchedUser = await User.findOne({ email: email });
-    if (!fetchedUser) {
+    if (!token) {
+      res.status(401).json({ messages: "Token is required" });
+      return;
+    }
+
+    const decodedToken = verify(token, ACCESS_TOKEN_KEY);
+    if (!decodedToken) {
+      res.status(401).json({ messages: "Invalid token" });
+      return;
+    }
+
+    const userCount = await User.countDocuments({ email: decodedToken.email });
+    if (userCount === 0) {
       res.status(401).json({ messages: "User does not exist" });
       return;
     }
@@ -172,8 +185,8 @@ router.post("/add_controller", async (req, res, next) => {
 
     const refreshToken = sign(
       {
-        email: fetchedUser.email,
-        name: fetchedUser.name,
+        email: decodedToken.email,
+        name: decodedToken.name,
         popID: popID,
       },
       REFRESH_TOKEN_KEY,
@@ -184,8 +197,8 @@ router.post("/add_controller", async (req, res, next) => {
 
     const accessToken = sign(
       {
-        email: fetchedUser.email,
-        name: fetchedUser.name,
+        email: decodedToken.email,
+        name: decodedToken.name,
         popID: popID,
       },
       ACCESS_TOKEN_KEY,
