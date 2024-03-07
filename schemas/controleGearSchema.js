@@ -8,17 +8,9 @@ const controleGearSchema = new Schema(
       required: true,
       unique: true,
     },
-    email: {
-      type: String,
-      required: true,
-    },
     dataInstances: {
       type: [Schema.Types.ObjectId],
       default: [],
-    },
-    refreshToken: {
-      type: String,
-      required: true,
     },
   },
   {

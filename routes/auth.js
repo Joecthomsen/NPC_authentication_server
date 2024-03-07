@@ -2,6 +2,7 @@ var express = require("express");
 var router = express.Router();
 //const ControleGear = require("../../http_server/schemas/controleGearSchema");
 const User = require("../schemas/userSchema");
+const Controller = require("../schemas/controllerSchema");
 const ControleGear = require("../schemas/controleGearSchema");
 const bcrypt = require("bcrypt");
 const { sign } = require("jsonwebtoken");
@@ -146,18 +147,11 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-/* GET users listing. */
-router.get("/", function (req, res, next) {
-  res.send("respond with a resource");
-});
-
-router.post("/addDevice", async (req, res, next) => {
+router.post("/add_controller", async (req, res, next) => {
   try {
-    const { manufactoringID, email } = req.body;
-    if (!email || !manufactoringID) {
-      res
-        .status(401)
-        .json({ messages: "Email and manufactoringID is required" });
+    const { popID, name, email } = req.body;
+    if (!popID || !email) {
+      res.status(401).json({ messages: "popID and email are required" });
       return;
     }
     const fetchedUser = await User.findOne({ email: email });
@@ -166,11 +160,11 @@ router.post("/addDevice", async (req, res, next) => {
       return;
     }
 
-    const checkForExistingDevice = await ControleGear.findOne({
-      manufactoringID,
+    const checkForExistingDevice = await Controller.findOne({
+      popID,
     });
     if (checkForExistingDevice) {
-      res.status(401).json({ messages: "Device already exist" });
+      res.status(401).json({ messages: "Controller already exist" });
       return;
     }
 
@@ -178,7 +172,7 @@ router.post("/addDevice", async (req, res, next) => {
       {
         email: fetchedUser.email,
         name: fetchedUser.name,
-        manufactoringID: manufactoringID,
+        popID: popID,
       },
       REFRESH_TOKEN_KEY,
       {
@@ -190,7 +184,7 @@ router.post("/addDevice", async (req, res, next) => {
       {
         email: fetchedUser.email,
         name: fetchedUser.name,
-        manufactoringID: manufactoringID,
+        popID: popID,
       },
       ACCESS_TOKEN_KEY,
       {
@@ -198,17 +192,18 @@ router.post("/addDevice", async (req, res, next) => {
       }
     );
 
-    const newDevice = await ControleGear.create({
-      manufactoringID,
-      email,
+    const newDevice = await Controller.create({
+      popID,
+      name,
       refreshToken,
     });
+
     if (!newDevice) {
       res.status(401).json({ messages: "Device not created" });
       return;
     }
 
-    fetchedUser.controleGear.push(manufactoringID);
+    fetchedUser.controllers.push(popID);
 
     await fetchedUser.save();
     if (!fetchedUser) {
@@ -220,11 +215,11 @@ router.post("/addDevice", async (req, res, next) => {
       .status(201)
       .json({ accessToken: accessToken, refreshToken: refreshToken });
   } catch (error) {
-    res.status(500).send("Could not create device");
+    res.status(500).send("Could not create controller");
   }
 });
 
-router.post("/refreshToken_device", async (req, res, next) => {
+router.post("/refresh_token_controller", async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
 
@@ -249,15 +244,15 @@ router.post("/refreshToken_device", async (req, res, next) => {
       return;
     }
 
-    const fetchedControleGear = await ControleGear.findOne({
-      manufactoringID: decodedRefreshToken.manufactoringID,
+    const fetchedController = await Controller.findOne({
+      popID: decodedRefreshToken.popID,
     });
 
-    if (!fetchedControleGear) {
+    if (!fetchedController) {
       res.status(401).json({ messages: "Invalid refresh token" });
       return;
     }
-    if (fetchedControleGear.refreshToken !== refreshToken) {
+    if (fetchedController.refreshToken !== refreshToken) {
       res.status(401).json({ messages: "Invalid refresh token" });
       return;
     }
@@ -266,7 +261,7 @@ router.post("/refreshToken_device", async (req, res, next) => {
       {
         email: decodedRefreshToken.email,
         name: decodedRefreshToken.name,
-        manufactoringID: decodedRefreshToken.manufactoringID,
+        popID: decodedRefreshToken.popID,
       },
       ACCESS_TOKEN_KEY,
       {
@@ -278,7 +273,7 @@ router.post("/refreshToken_device", async (req, res, next) => {
       {
         email: decodedRefreshToken.email,
         name: decodedRefreshToken.name,
-        manufactoringID: decodedRefreshToken.manufactoringID,
+        popID: decodedRefreshToken.popID,
       },
       REFRESH_TOKEN_KEY,
       {
@@ -286,12 +281,12 @@ router.post("/refreshToken_device", async (req, res, next) => {
       }
     );
 
-    fetchedControleGear.refreshToken = newRefreshToken;
-    await fetchedControleGear.save();
+    fetchedController.refreshToken = newRefreshToken;
+    await fetchedController.save();
 
-    console.log(fetchedControleGear);
+    console.log(fetchedController);
 
-    if (!fetchedControleGear) {
+    if (!fetchedController) {
       res.status(401).json({ messages: "Could not refresh token" });
       return;
     }
@@ -304,7 +299,7 @@ router.post("/refreshToken_device", async (req, res, next) => {
   }
 });
 
-router.post("/refreshToken_user", async (req, res, next) => {
+router.post("/refresh_token_user", async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken) {

@@ -20,7 +20,7 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    controleGear: {
+    controllers: {
       type: [String],
       index: true,
       default: [],
