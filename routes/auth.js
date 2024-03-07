@@ -154,8 +154,8 @@ router.post("/add_controller", async (req, res, next) => {
     const { popID, name } = req.body;
     const { token } = req.headers;
 
-    if (!popID) {
-      res.status(401).json({ messages: "popID is required" });
+    if (!popID || !name) {
+      res.status(401).json({ messages: "popID and name are required" });
       return;
     }
     if (!token) {
@@ -234,9 +234,11 @@ router.post("/add_controller", async (req, res, next) => {
       return;
     }
 
-    res
-      .status(201)
-      .json({ accessToken: accessToken, refreshToken: refreshToken });
+    res.status(201).json({
+      controller: newDevice,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    });
   } catch (error) {
     res.status(500).send("Could not create controller");
   }
