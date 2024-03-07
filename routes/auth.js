@@ -164,6 +164,7 @@ router.post("/add_controller", async (req, res, next) => {
     }
 
     const decodedToken = verify(token, ACCESS_TOKEN_KEY);
+
     if (!decodedToken) {
       res.status(401).json({ messages: "Invalid token" });
       return;
@@ -178,6 +179,7 @@ router.post("/add_controller", async (req, res, next) => {
     const checkForExistingDevice = await Controller.findOne({
       popID,
     });
+
     if (checkForExistingDevice) {
       res.status(401).json({ messages: "Controller already exist" });
       return;
@@ -218,7 +220,13 @@ router.post("/add_controller", async (req, res, next) => {
       return;
     }
 
+    console.log("New device: " + newDevice);
+
+    const fetchedUser = await User.findOne({ email: decodedToken.email });
+
     fetchedUser.controllers.push(popID);
+
+    console.log("Fetched user: " + fetchedUser);
 
     await fetchedUser.save();
     if (!fetchedUser) {
