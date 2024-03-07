@@ -89,6 +89,7 @@ router.post("/signUp", async (req, res, next) => {
     const userToReturn = {
       accessToken: accessToken,
       refreshToken: refreshToken,
+      controllers: [],
     };
     return res.status(201).json(userToReturn);
   } catch (error) {
@@ -137,6 +138,7 @@ router.post("/login", async (req, res, next) => {
       const userToReturn = {
         accessToken: accessToken,
         refreshToken: refreshToken,
+        controllers: fetchedUser.controllers,
       };
       res.status(200).json(userToReturn);
     } else {
