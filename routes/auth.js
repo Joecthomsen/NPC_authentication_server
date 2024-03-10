@@ -32,9 +32,11 @@ router.post("/signUp", async (req, res, next) => {
         .send("Email, first name, last name and password is required");
     }
 
-    console.log("email: " + email);
+    const emailLowerCase = email.toLowerCase();
 
-    const checkForExistingUser = await User.findOne({ email: email });
+    console.log("email: " + emailLowerCase);
+
+    const checkForExistingUser = await User.findOne({ email: emailLowerCase });
 
     if (checkForExistingUser) {
       return res.status(409).send("User already exist");
@@ -54,7 +56,7 @@ router.post("/signUp", async (req, res, next) => {
     //create token and attach it to returned JSON
     const accessToken = sign(
       {
-        email: email.toLowerCase(),
+        email: emailLowerCase, //email.toLowerCase(),
         name: fullName,
       },
       ACCESS_TOKEN_KEY,
@@ -68,7 +70,7 @@ router.post("/signUp", async (req, res, next) => {
     // Generate refresh token
     const refreshToken = sign(
       {
-        email: email.toLowerCase(),
+        email: emailLowerCase, //email.toLowerCase(),
         name: fullName,
       },
       REFRESH_TOKEN_KEY, // Store this key securely, preferably in .env
@@ -78,7 +80,7 @@ router.post("/signUp", async (req, res, next) => {
     );
 
     let userToStore = await User.create({
-      email: email.toLowerCase(),
+      email: emailLowerCase, //email.toLowerCase(),
       name: fullName,
       password: encryptedPassword,
       refreshToken: refreshToken,
