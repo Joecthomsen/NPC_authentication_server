@@ -10,7 +10,13 @@ const accessTokenExpirationTime = "12h";
 const refreshTokenExpirationTime = "7d";
 const saltRounds = 10;
 const jwt = require("jsonwebtoken");
-const { connection } = require("mongoose");
+
+const tokenService = require("../services/tokenService");
+
+// import {
+//   getNewAccessTokenUser,
+//   getNewRefreshTokenUser,
+// } from "../services/tokenService";
 
 const ACCESS_TOKEN_KEY =
   process.env.ACCESS_TOKEN_KEY || "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
@@ -33,9 +39,6 @@ router.post("/signUp", async (req, res, next) => {
     }
 
     const emailLowerCase = email.toLowerCase();
-
-    console.log("email: " + emailLowerCase);
-
     const checkForExistingUser = await User.findOne({ email: emailLowerCase });
 
     if (checkForExistingUser) {
@@ -43,50 +46,28 @@ router.post("/signUp", async (req, res, next) => {
     }
 
     const encryptedPassword = await bcrypt.hash(password, saltRounds);
-
-    console.log("Encrypted password: " + encryptedPassword);
-
     const capitalizedFirstName = capitalizeFirstLetter(firstName);
     const capitalizedLastName = capitalizeFirstLetter(lastName);
-
     const fullName = capitalizedFirstName + " " + capitalizedLastName;
 
-    console.log("Full name: " + fullName);
-
     //create token and attach it to returned JSON
-    const accessToken = sign(
-      {
-        email: emailLowerCase, //email.toLowerCase(),
-        name: fullName,
-      },
-      ACCESS_TOKEN_KEY,
-      {
-        expiresIn: accessTokenExpirationTime,
-      }
+    const accessToken = tokenService.getNewAccessTokenUser(
+      emailLowerCase,
+      fullName
     );
-
-    console.log("TEST");
 
     // Generate refresh token
-    const refreshToken = sign(
-      {
-        email: emailLowerCase, //email.toLowerCase(),
-        name: fullName,
-      },
-      REFRESH_TOKEN_KEY, // Store this key securely, preferably in .env
-      {
-        expiresIn: refreshTokenExpirationTime,
-      }
+    const refreshToken = tokenService.getNewRefreshTokenUser(
+      emailLowerCase,
+      fullName
     );
 
-    let userToStore = await User.create({
+    await User.create({
       email: emailLowerCase, //email.toLowerCase(),
       name: fullName,
       password: encryptedPassword,
       refreshToken: refreshToken,
     });
-
-    console.log("User to store: " + userToStore);
 
     const userToReturn = {
       accessToken: accessToken,
@@ -112,26 +93,14 @@ router.post("/login", async (req, res, next) => {
     console.log(fetchedUser);
 
     if (await bcrypt.compare(password, fetchedUser.password)) {
-      const accessToken = sign(
-        {
-          email: fetchedUser.email,
-          name: fetchedUser.name,
-        },
-        ACCESS_TOKEN_KEY,
-        {
-          expiresIn: accessTokenExpirationTime,
-        }
+      const accessToken = tokenService.getNewAccessTokenUser(
+        fetchedUser.email,
+        fetchedUser.name
       );
 
-      const refreshToken = sign(
-        {
-          email: fetchedUser.email,
-          name: fetchedUser.name,
-        },
-        REFRESH_TOKEN_KEY,
-        {
-          expiresIn: refreshTokenExpirationTime,
-        }
+      const refreshToken = tokenService.getNewRefreshTokenUser(
+        fetchedUser.email,
+        fetchedUser.name
       );
 
       fetchedUser.refreshToken = refreshToken;
@@ -160,6 +129,61 @@ router.post("/login", async (req, res, next) => {
     } else {
       res.status(401).json({ messages: "Invalid username or password" });
     }
+  } catch (e) {
+    res.status(500).json({ "Internal server error: ": e });
+  }
+});
+
+router.post("/sign_in_controller", async (req, res, next) => {
+  try {
+    const { popid, token } = req.headers;
+
+    console.log("HEaders: ", req.headers);
+
+    if (!popid) {
+      res.status(401).json({ messages: "popID header is required" });
+      return;
+    }
+    if (!token) {
+      res.status(401).json({ messages: "Token header is required" });
+      return;
+    }
+
+    // const decodedToken = verify(token, ACCESS_TOKEN_KEY);
+    // if (!decodedToken) {
+    //   res.status(401).json({ messages: "Invalid token" });
+    //   return;
+    // }
+
+    const decodedToken = tokenService.verifyAccessTokenUser(token);
+    if (!decodedToken) {
+      res.status(401).json({ messages: "Invalid token" });
+      return;
+    }
+
+    const controller = await Controller.findOne({ popID: popid });
+    if (!controller) {
+      res.status(401).json({ messages: "Controller does not exist" });
+      return;
+    }
+
+    const accessToken = tokenService.getNewAccessTokenController(
+      controller.popID,
+      controller.name
+    );
+
+    const refreshToken = tokenService.getNewRefreshTokenController(
+      controller.popID,
+      controller.name
+    );
+
+    controller.refreshToken = refreshToken;
+    await controller.save();
+    const controllerToReturn = {
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    };
+    res.status(200).json(controllerToReturn);
   } catch (e) {
     res.status(500).json({ "Internal server error: ": e });
   }
