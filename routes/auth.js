@@ -197,7 +197,7 @@ router.post("/add_controller", async (req, res, next) => {
       return;
     }
 
-    const decodedToken = verify(token, ACCESS_TOKEN_KEY);
+    const decodedToken = tokenService.verifyAccessTokenUser(token);
 
     if (!decodedToken) {
       res.status(401).json({ messages: "Invalid token" });
@@ -219,29 +219,8 @@ router.post("/add_controller", async (req, res, next) => {
       return;
     }
 
-    const refreshToken = sign(
-      {
-        email: decodedToken.email,
-        name: decodedToken.name,
-        popID: popID,
-      },
-      REFRESH_TOKEN_KEY,
-      {
-        expiresIn: refreshTokenExpirationTime,
-      }
-    );
-
-    const accessToken = sign(
-      {
-        email: decodedToken.email,
-        name: decodedToken.name,
-        popID: popID,
-      },
-      ACCESS_TOKEN_KEY,
-      {
-        expiresIn: accessTokenExpirationTime,
-      }
-    );
+    const refreshToken = tokenService.getNewRefreshTokenController(popID, name);
+    const accessToken = tokenService.getNewAccessTokenController(popID, name);
 
     const newDevice = await Controller.create({
       popID,
@@ -253,16 +232,10 @@ router.post("/add_controller", async (req, res, next) => {
       res.status(401).json({ messages: "Device not created" });
       return;
     }
-
-    console.log("New device: " + newDevice);
-
     const fetchedUser = await User.findOne({ email: decodedToken.email });
-
     fetchedUser.controllers.push(popID);
-
-    console.log("Fetched user: " + fetchedUser);
-
     await fetchedUser.save();
+
     if (!fetchedUser) {
       res.status(401).json({ messages: "Device not added to user" });
       return;
@@ -271,7 +244,6 @@ router.post("/add_controller", async (req, res, next) => {
     res.status(201).json({
       controller: newDevice,
       accessToken: accessToken,
-      refreshToken: refreshToken,
     });
   } catch (error) {
     res.status(500).send("Could not create controller");
@@ -287,11 +259,10 @@ router.post("/refresh_token_controller", async (req, res, next) => {
       return;
     }
 
-    console.log("Refresh token: " + refreshToken);
-
     let decodedRefreshToken = "";
     try {
-      decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
+      decodedRefreshToken =
+        tokenService.verifyRefreshTokenController(refreshToken);
     } catch (error) {
       console.error(error);
       res
@@ -316,28 +287,14 @@ router.post("/refresh_token_controller", async (req, res, next) => {
       return;
     }
 
-    const accessToken = sign(
-      {
-        email: decodedRefreshToken.email,
-        name: decodedRefreshToken.name,
-        popID: decodedRefreshToken.popID,
-      },
-      ACCESS_TOKEN_KEY,
-      {
-        expiresIn: accessTokenExpirationTime,
-      }
+    const accessToken = tokenService.getNewAccessTokenController(
+      decodedRefreshToken.popID,
+      decodedRefreshToken.name
     );
 
-    const newRefreshToken = sign(
-      {
-        email: decodedRefreshToken.email,
-        name: decodedRefreshToken.name,
-        popID: decodedRefreshToken.popID,
-      },
-      REFRESH_TOKEN_KEY,
-      {
-        expiresIn: refreshTokenExpirationTime,
-      }
+    const newRefreshToken = tokenService.getNewRefreshTokenController(
+      decodedRefreshToken.popID,
+      decodedRefreshToken.name
     );
 
     fetchedController.refreshToken = newRefreshToken;
@@ -366,7 +323,7 @@ router.post("/refresh_token_user", async (req, res, next) => {
       return;
     }
 
-    let decodedRefreshToken = jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
+    let decodedRefreshToken = tokenService.verifyRefreshTokenUser(refreshToken); //jwt.verify(refreshToken, REFRESH_TOKEN_KEY);
 
     if (!decodedRefreshToken) {
       res.status(401).json({ messages: "Invalid refresh token" });
@@ -386,26 +343,14 @@ router.post("/refresh_token_user", async (req, res, next) => {
       return;
     }
 
-    const accessToken = sign(
-      {
-        email: decodedRefreshToken.email,
-        name: decodedRefreshToken.name,
-      },
-      ACCESS_TOKEN_KEY,
-      {
-        expiresIn: accessTokenExpirationTime,
-      }
+    const accessToken = tokenService.getNewAccessTokenUser(
+      decodedRefreshToken.email,
+      decodedRefreshToken.name
     );
 
-    const newRefreshToken = sign(
-      {
-        email: decodedRefreshToken.email,
-        name: decodedRefreshToken.name,
-      },
-      REFRESH_TOKEN_KEY,
-      {
-        expiresIn: refreshTokenExpirationTime,
-      }
+    const newRefreshToken = tokenService.getNewRefreshTokenUser(
+      decodedRefreshToken.email,
+      decodedRefreshToken.name
     );
 
     user.refreshToken = newRefreshToken;
