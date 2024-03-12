@@ -149,12 +149,6 @@ router.post("/sign_in_controller", async (req, res, next) => {
       return;
     }
 
-    // const decodedToken = verify(token, ACCESS_TOKEN_KEY);
-    // if (!decodedToken) {
-    //   res.status(401).json({ messages: "Invalid token" });
-    //   return;
-    // }
-
     const decodedToken = tokenService.verifyAccessTokenUser(token);
     if (!decodedToken) {
       res.status(401).json({ messages: "Invalid token" });
