@@ -1,27 +1,10 @@
 var express = require("express");
 var router = express.Router();
-//const ControleGear = require("../../http_server/schemas/controleGearSchema");
 const User = require("../schemas/userSchema");
 const Controller = require("../schemas/controllerSchema");
-const ControleGear = require("../schemas/controleGearSchema");
 const bcrypt = require("bcrypt");
-const { sign, verify } = require("jsonwebtoken");
-const accessTokenExpirationTime = "12h";
-const refreshTokenExpirationTime = "7d";
 const saltRounds = 10;
-const jwt = require("jsonwebtoken");
-
 const tokenService = require("../services/tokenService");
-
-// import {
-//   getNewAccessTokenUser,
-//   getNewRefreshTokenUser,
-// } from "../services/tokenService";
-
-const ACCESS_TOKEN_KEY =
-  process.env.ACCESS_TOKEN_KEY || "MegaSecretKeyAccessTokenKey"; //TODO Make .env file
-const REFRESH_TOKEN_KEY =
-  process.env.REFRESH_TOKEN_KEY || "MegaSecretKeyRefreshTokenKey"; //TODO Make .env file
 
 function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);

@@ -3,7 +3,6 @@ const accessTokenExpirationTimeUser = "12h";
 const refreshTokenExpirationTimeUser = "7d";
 const accessTokenExpirationTimeController = "12h";
 const refreshTokenExpirationTimeController = "7d";
-const jwt = require("jsonwebtoken");
 
 const ACCESS_TOKEN_KEY_USER =
   process.env.ACCESS_TOKEN_KEY || "MegaSecretKeyAccessTokenKeyUser"; //TODO Make .env file
