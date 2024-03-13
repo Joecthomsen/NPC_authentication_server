@@ -6,7 +6,11 @@ var logger = require("morgan");
 const { connect } = require("mongoose");
 //require("dotenv").config();
 var indexRouter = require("./routes/index");
-var authRouter = require("./routes/auth");
+
+//var authRouter = require("./routes/auth");
+var userRouter = require("./routes/auth_user");
+var controllerRouter = require("./routes/auth_controller");
+
 var app = express();
 
 // view engine setup
@@ -20,7 +24,9 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
 app.use("/", indexRouter);
-app.use("/auth", authRouter);
+//app.use("/auth", authRouter);
+app.use("/auth/user", userRouter);
+app.use("/auth/controller", controllerRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
