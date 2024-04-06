@@ -77,8 +77,8 @@ router.post("/add_controller", async (req, res, next) => {
       return;
     }
 
-    const userCount = await User.countDocuments({ email: decodedToken.email });
-    if (userCount === 0) {
+    const user = await User.findOne({ email: decodedToken.email });
+    if (!user) {
       res.status(401).json({ messages: "User does not exist" });
       return;
     }
@@ -88,7 +88,30 @@ router.post("/add_controller", async (req, res, next) => {
     });
 
     if (checkForExistingDevice) {
-      res.status(401).json({ messages: "Controller already exist" });
+      //const index = user.controllers.findIndex((controller) => controller === popID);
+
+      // Controller found, remove it from the array
+      const existingUser = await User.findById(checkForExistingDevice.owner);
+      if (existingUser) {
+        const index = existingUser.controllers.indexOf(
+          checkForExistingDevice.popID
+        );
+        if (index !== -1) {
+          existingUser.controllers.splice(index, 1);
+          await existingUser.save();
+        }
+
+        user.controllers.push(popID); // Add the new controller to the user's controllers array
+        await user.save(); // Save the updated user document
+        checkForExistingDevice.owner = user._id; // Update the owner of the existing device
+        res.status(200).json({ message: "Controller relocated successfully" });
+      } else {
+        // Controller not found in the array
+        res
+          .status(404)
+          .json({ message: "Controller not found in user's array" });
+      }
+      //res.status(401).json({ messages: "Controller already exist" });
       return;
     }
 
@@ -99,6 +122,7 @@ router.post("/add_controller", async (req, res, next) => {
       popID,
       name,
       refreshToken,
+      owner: user._id,
     });
 
     if (!newDevice) {
