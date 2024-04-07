@@ -104,7 +104,10 @@ router.post("/add_controller", async (req, res, next) => {
         user.controllers.push(popID); // Add the new controller to the user's controllers array
         await user.save(); // Save the updated user document
         checkForExistingDevice.owner = user._id; // Update the owner of the existing device
-        res.status(200).json({ message: "Controller relocated successfully" });
+        checkForExistingDevice.name = req.name;
+        checkForExistingDevice.save();
+        res.status(201).json({ message: "Controller relocated successfully" });
+        return;
       } else {
         // Controller not found in the array
         res
